@@ -13,7 +13,7 @@ from envelope import generate_envelope
 from redis_lua import validate_and_update, get_session, get_redis_client
 from decay_engine import compute_trust
 from policy_engine import evaluate_policy_full
-from crypto_provider import verify_token
+from crypto_provider import verify as verify_token
 from audit import log_event_async
 from role_module import validate_role
 from attribute_validator import validate_attributes
@@ -61,7 +61,7 @@ class QSRACMiddleware(BaseHTTPMiddleware):
                 return JSONResponse(status_code=401, content={"error": "Missing X-Core-Token"})
 
             session_data = get_session(session_id)
-            token_signature = session_data.get("token_signature")
+            token_signature = bytes.fromhex(session_data.get("token_signature"))
             if not token_signature:
                 return JSONResponse(status_code=401, content={"error": "Missing token signature in session"})
 

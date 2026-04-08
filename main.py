@@ -8,6 +8,7 @@ from crypto_provider import serialize_public_key
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
 from datetime import datetime, timezone
+from middleware import set_signing_public_key
 
 
 # config must be imported first — raises RuntimeError at startup if any
@@ -42,6 +43,7 @@ MFA_TRUST_INCREMENT = 0.2
 app = FastAPI(title="QSRAC", version="1.0.0")
 
 _server_signing_private_key, _server_signing_public_key = generate_signing_keypair()
+set_signing_public_key(_server_signing_public_key)
 # Renamed to be algorithm-agnostic (holds either ECDH or Kyber keys)
 _server_exchange_private_key, _server_exchange_public_key = generate_exchange_keypair()
 
@@ -135,7 +137,7 @@ def login(request: LoginRequest):
         try:
             token_signature = sign_token(_server_signing_private_key, core_token_bytes)
         except Exception:
-            token_signature = b"fallback"
+            raise Exception("Token signing failed")
 
         if request.client_public_key:
             client_pub_bytes = bytes.fromhex(request.client_public_key)
