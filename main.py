@@ -57,6 +57,8 @@ class LoginResponse(BaseModel):
     session_id: str
     core_token: str
     server_public_key: str
+    signing_public_key: str
+    crypto_mode: str    
     kem_ciphertext: str | None = None
     seq: int
     expires_in: int
@@ -188,10 +190,16 @@ def login(request: LoginRequest):
         pipe.expire(key, SESSION_TTL)
         pipe.execute()
 
+        signing_pub_bytes = serialize_public_key(_server_signing_public_key)
+        signing_pub_hex = signing_pub_bytes.hex()
+        crypto_mode = "PQC" if PQC_AVAILABLE else "CLASSICAL"
+
         return LoginResponse(
             session_id=session_id,
             core_token=core_token_payload,
             server_public_key=server_pub_hex,
+            signing_public_key=signing_pub_hex,
+            crypto_mode=crypto_mode,
             kem_ciphertext=kem_ciphertext_hex,
             seq=0,
             expires_in=SESSION_TTL,
