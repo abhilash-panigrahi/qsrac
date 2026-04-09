@@ -5,7 +5,7 @@ plot_trust_decay.py — Visualizes the Trust Decay Dynamics for QSRAC.
 import numpy as np
 import matplotlib.pyplot as plt
 
-def compute_trust(t, sensitivity, risk_trend, alpha=0.7, beta=0.3, trust0=1.0):
+def compute_trust(t, sensitivity, risk_trend, alpha=0.6, beta=0.4, trust0=1.0):
     """
     Computes trust based on the formula:
     trust = trust0 * exp(-(alpha * sensitivity + beta * risk_trend) * time)
