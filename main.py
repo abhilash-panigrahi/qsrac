@@ -38,7 +38,6 @@ from redis_lua import (
 )
 from decay_engine import compute_trust
 from audit import log_event_async
-from rate_limiter import check_rate_limit
 
 log = logging.getLogger(__name__)
 
@@ -228,16 +227,8 @@ def login(request: LoginRequest):
 def mfa_challenge(x_session_id: str = Header(...)):
     """
     Issue a single-use HMAC challenge for MFA state-repair.
-    Stores nonce in Redis with TTL=120s.
-    Rate limited: 5 requests/min per session (mfa bucket).
+    Stores nonce in Redis with TTL=120s.    
     """
-    if not check_rate_limit(x_session_id, bucket="mfa"):
-        raise HTTPException(
-            status_code=429,
-            detail="MFA rate limit exceeded — try again in 60 seconds",
-            headers={"Retry-After": "60"},
-        )
-
     try:
         session_data = get_session(x_session_id)
         session_key = bytes.fromhex(session_data["session_key"])
@@ -270,15 +261,7 @@ async def mfa_verify(body: MFAVerifyRequest, x_session_id: str = Header(...)):
     Verify MFA response and perform state-repair transition.
     MUST pass through Redis Lua gate — not a bypass.
     Increments seq, extends hash-chain, adjusts trust upward (bounded).
-    Rate limited: 5 requests/min per session (mfa bucket).
     """
-    if not check_rate_limit(x_session_id, bucket="mfa"):
-        raise HTTPException(
-            status_code=429,
-            detail="MFA rate limit exceeded — try again in 60 seconds",
-            headers={"Retry-After": "60"},
-        )
-
     # ── Step A: Validate and consume nonce (single-use) ───────────────────────
     try:
         client = get_redis_client()

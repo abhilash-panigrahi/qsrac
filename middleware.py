@@ -18,7 +18,6 @@ from crypto_provider import verify as verify_token
 from audit import log_event_async
 from role_module import validate_role
 from attribute_validator import validate_attributes
-from rate_limiter import check_rate_limit
 
 log = logging.getLogger(__name__)
 
@@ -76,16 +75,6 @@ class QSRACMiddleware(BaseHTTPMiddleware):
             return JSONResponse(status_code=503, content={"error": "Redis unavailable during token verification"})
         except Exception as e:
             return JSONResponse(status_code=500, content={"error": f"Token verification failed: {str(e)}"})
-
-        # 0b. Rate limiting — after identity is confirmed, before any state mutation.
-        # Uses key namespace  rl:{session_id}:general — never overlaps gate namespace.
-        # Non-blocking: ConnectionError inside check_rate_limit → fail-open.
-        if not check_rate_limit(session_id, bucket="general"):
-            return JSONResponse(
-                status_code=429,
-                content={"error": "Rate limit exceeded"},
-                headers={"Retry-After": "60"},
-            )
 
         # 1. Extract context
         try:

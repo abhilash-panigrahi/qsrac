@@ -13,7 +13,6 @@ failed gate never silently extends a session.
 Key namespaces
 ──────────────
   session:{session_id}  — Fast Path session state (this module)
-  rl:{session_id}:*     — Rate-limit buckets          (rate_limiter.py)
   mfa:{session_id}:*    — MFA nonces                  (main.py)
 """
 
